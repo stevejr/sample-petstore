@@ -1,23 +1,23 @@
-pipeline {
+peline {
     agent none
-        
+    environment {
+        COMMIT_HASH = 'default'
+    }   
     stages {
-        stage('Build 1') {
-            agent { docker 'maven:3.5-jdk-7-alpine' }
-            steps {
-                sh "ls -ltra"
-                sh "mvn clean package"
-                junit '**/target/surefire-reports/**/*.xml'
-            }
-        }
-        stage('Build 2') {
+        stage('Build Dockerfile Multi-Stage') {
            agent any
            steps {
-               script {
-                   newImage = docker.build('petstore-tomcat')
-               }
-           }
+           // override with variable
+                script {
+                    sh 'git rev-parse HEAD > gitCommit'
+                    def gitCommit = readFile('gitCommit').trim()
+                    // short SHA, possibly better for chat notifications, etc.
+                    def shortCommit = gitCommit.take(6)
+                    withEnv(['COMMIT_HASH=' + shortCommit]) {
+                        newImage = docker.build('petstore-tomcat:$COMMIT_HASH')
+                    }
+                }
+            }
         }
     }
 }
-
