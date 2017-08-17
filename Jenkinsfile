@@ -15,7 +15,7 @@ pipeline {
             }
             steps {
                 sh 'mvn -B -f pom.xml clean package'
-                junit(allowEmptyResults: true, testResults: '**/target/surefire-reports/TEST-*.xml
+                junit(allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml')
             }
         }
         stage('Quality Analysis') {
