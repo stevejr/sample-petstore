@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        IMAGE = readMavenPom().getArtifactId()    //Use Pipeline Utility Steps
+        IMAGE = readMavenPom().getArtifactId()
         VERSION = readMavenPom().getVersion()
     }
 
@@ -26,7 +26,9 @@ pipeline {
         stage('Build Image') {
             steps {
                 sh """
-                    docker build -t ${IMAGE}
+                    docker build --build-arg VCS_REF='git rev-parse — short HEAD' \
+                        --build-arg BUILD_DATE='date -u +"%Y-%m-%dT%H:%M:%SZ"' \
+                        -t ${IMAGE} .
                     docker tag ${IMAGE} ${IMAGE}:${VERSION}
                 """
             }
