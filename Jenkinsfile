@@ -5,8 +5,9 @@ pipeline {
         stage('Build 1') {
             agent { docker 'maven:3.5-jdk-7-alpine' }
             steps {
+                sh "ls -ltra"
                 sh "mvn clean package"
-                junit './target/surefire-reports/**/*.xml'
+                junit '**/target/surefire-reports/**/*.xml'
             }
         }
         stage('Build 2') {
