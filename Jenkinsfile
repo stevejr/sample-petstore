@@ -1,4 +1,4 @@
-peline {
+pipeline {
     agent none
     environment {
         COMMIT_HASH = 'default'
