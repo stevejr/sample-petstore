@@ -1,5 +1,5 @@
 pipeline {
-    agent none
+    agent any
     environment {
         IMAGE = readMavenPom().getArtifactId()    //Use Pipeline Utility Steps
         VERSION = readMavenPom().getVersion()
@@ -19,6 +19,9 @@ pipeline {
             }
         }
         stage('Quality Analysis') {
+            steps {
+                sh 'echo I will do some analysis one day!'
+            } 
         }
         stage('Build Image') {
             steps {
