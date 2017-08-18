@@ -25,11 +25,13 @@ pipeline {
         }
         stage('Build Image') {
             steps {
+                sh 'git rev-parse --short HEAD > commit'
+                def VCS_REF  = readFile('commit').trim()
                 sh """
-                    docker build --build-arg VCS_REF=`git rev-parse --short HEAD` \
+                    docker build --build-arg VCS_REF=${VCS_REF} \
                         --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
                         -t ${IMAGE} .
-                    docker tag ${IMAGE} ${IMAGE}:${VERSION}
+                    docker tag ${IMAGE} ${IMAGE}:${VERSION}.${VCS_REF}
                 """
             }
         }
