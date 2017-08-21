@@ -9,10 +9,18 @@ pipeline {
         stage('Setup Env vars') {
             steps {
                 script {
-                    sh 'git rev-parse --short HEAD > commit'
-                    env.VCS_REF = readFile('commit').trim()
-                    env.BUILD_DATE = sh 'date -u +"%Y-%m-%dT%H:%M:%SZ"'
+                    env.VCS_REF = sh (
+                        returnStdout: true,
+                        script: 'git rev-parse --short HEAD'
+                    )
+                        
+                    env.BUILD_DATE = sh (
+                        returnStdout: true,
+                        script: 'date -u +"%Y-%m-%dT%H:%M:%SZ"'
+                    )
                 }
+                echo "${env.VCS_REF}"
+                echo "${env.BUILD_DATE}"
             }
         }
         stage('Build WAR') {
@@ -34,12 +42,7 @@ pipeline {
         }
         stage('Build Image') {
             steps {
-                sh """
-                    docker build --build-arg VCS_REF=${env.VCS_REF} \
-                        --build-arg BUILD_DATE=${env.BUILD_DATE} \
-                        -t ${IMAGE} .
-                    docker tag ${IMAGE} ${IMAGE}:${VERSION}.${VCS_REF}
-                """
+                sh "docker build --build-arg VCS_REF=${env.VCS_REF} --build-arg BUILD_DATE=${env.BUILD_DATE} -t ${IMAGE}:${VERSION}.${VCS_REF} ."
             }
         }
     }
