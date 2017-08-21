@@ -43,8 +43,8 @@ pipeline {
         stage('Build Image') {
             steps {
                 sh """
-                    docker build --build-arg VCS_REF=${env.VCS_REF} /
-                    --build-arg BUILD_DATE=${env.BUILD_DATE} /
+                    docker build --build-arg VCS_REF=${env.VCS_REF} \
+                    --build-arg BUILD_DATE=${env.BUILD_DATE} \
                     -t ${IMAGE}:${VERSION}.${VCS_REF} .
                 """
             }
