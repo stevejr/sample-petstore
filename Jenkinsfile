@@ -6,6 +6,15 @@ pipeline {
     }
 
     stages {
+        stage('Setup Env vars') {
+            steps {
+                script {
+                    sh 'git rev-parse --short HEAD > commit'
+                    env.VCS_REF = readFile('commit').trim()
+                    env.BUILD_DATE = sh 'date -u +"%Y-%m-%dT%H:%M:%SZ"'
+                }
+            }
+        }
         stage('Build WAR') {
             agent {
                 docker {
@@ -25,11 +34,9 @@ pipeline {
         }
         stage('Build Image') {
             steps {
-                sh 'git rev-parse --short HEAD > commit'
-                def VCS_REF  = readFile('commit').trim()
                 sh """
-                    docker build --build-arg VCS_REF=${VCS_REF} \
-                        --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
+                    docker build --build-arg VCS_REF=${env.VCS_REF} \
+                        --build-arg BUILD_DATE=${env.BUILD_DATE} \
                         -t ${IMAGE} .
                     docker tag ${IMAGE} ${IMAGE}:${VERSION}.${VCS_REF}
                 """
