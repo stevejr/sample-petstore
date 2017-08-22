@@ -57,10 +57,14 @@ pipeline {
         stage('Build Image') {
             steps {
                 script {
-                    // Build the image. Create a global reference to the Image Name
-                    env.DOCKER_IMAGE_NAME="${DOCKER_REPO}/${IMAGE}:${STAGING_VERSION}"
-                    def myImage = docker.build("${DOCKER_IMAGE_NAME}", "--build-arg VCS_REF=${VCS_REF.take(6)} --build-arg BUILD_DATE=${BUILD_DATE} .")
-                    echo "Built image ${myImage.id}"
+                    try {
+                        // Build the image. Create a global reference to the Image Name
+                        env.DOCKER_IMAGE_NAME="${DOCKER_REPO}/${IMAGE}:${STAGING_VERSION}"
+                        def myImage = docker.build("${DOCKER_IMAGE_NAME}", "--build-arg VCS_REF=${VCS_REF.take(6)} --build-arg BUILD_DATE=${BUILD_DATE} .")
+                        echo "Built image ${myImage.id}"
+                    } catch (Exception e) {
+                        echo "Exception Caught: ${e}"
+                    }
                 }
             }
         }
