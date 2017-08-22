@@ -61,8 +61,24 @@ pipeline {
         }
     }
     post {
-        failure {    // notify users when the Pipeline fails
-            mail(to: 'me@example.com', subject: "Failed Pipeline", body: "Something is wrong.")
-        } 
+// Always runs. And it runs before any of the other post conditions.
+        always {
+            // Let's wipe out the workspace before we finish!
+            deleteDir()
+        }
+    
+        success {
+            mail(from: "bob@example.com", 
+                to: "steve@example.com", 
+                subject: "Build ${STAGING_VERSION} passed.",
+                body: "Nothing to see here")
+        }
+
+        failure {
+          mail(from: "bob@example.com", 
+              to: "steve@example.com", 
+              subject: "Build ${STAGING_VERSION} failed.",
+              body: "Nothing to see here")
+        }
     }
 }
