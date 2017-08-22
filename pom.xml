@@ -31,28 +31,23 @@
   <version>6.0.3-SNAPSHOT</version>
   <packaging>war</packaging>
 
-  <name>JPetStore Demo 6</name>
-  <url>http://www.mybatis.org</url>
+  <name>Sample JPetStore</name>
 
   <scm>
-    <url>http://github.com/mybatis/jpetstore-6</url>
-    <connection>scm:git:ssh://github.com/mybatis/jpetstore-6.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com/mybatis/jpetstore-6.git</developerConnection>
+    <url>http://github.com/stevejr/sample-petstore.git</url>
+    <connection>scm:git:https://github.com/stevejr/sample-petstore.git</connection>
+    <developerConnection>scm:git:https://github.com/stevejr/sample-petstore.git</developerConnection>
     <tag>HEAD</tag>
   </scm>
   <issueManagement>
     <system>GitHub Issue Management</system>
-    <url>https://github.com/mybatis/jpetstore/issues</url>
+    <url>https://github.com/stevejr/sample-petstore.git</url>
   </issueManagement>
-  <ciManagement>
-    <system>Travis CI</system>
-    <url>https://travis-ci.org/mybatis/jpetstore-6</url>
-  </ciManagement>
   <distributionManagement>
     <site>
       <id>gh-pages</id>
       <name>Mybatis GitHub Pages</name>
-      <url>git:ssh://git@github.com/mybatis/jpetstore-6.git?gh-pages#</url>
+      <url>git:https://github.com/stevejr/sample-petstore.git?gh-pages#</url>
     </site>
   </distributionManagement>
 
@@ -151,6 +146,11 @@
     <finalName>jpetstore</finalName>
     <pluginManagement>
       <plugins>
+        <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>versions-maven-plugin</artifactId>
+            <version>2.2</version>
+        </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-war-plugin</artifactId>
