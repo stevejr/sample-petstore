@@ -79,6 +79,9 @@ pipeline {
         }
         stage('Push Image') {
             steps {
+                timeout(time:2, unit:'DAYS') {
+                    input message: 'Image look good?', ok: 'Push to Docker Hub', submitter: 'admin'
+                }
                 script {
                     docker.withRegistry("${DOCKER_REG}", 'dockerhub-creds') {
                         docker.image("${DOCKER_IMAGE_NAME}").push()
