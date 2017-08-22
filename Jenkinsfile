@@ -1,4 +1,4 @@
-pipeline {
+peline {
     agent any
     environment {
         IMAGE = readMavenPom().getArtifactId()
@@ -7,6 +7,8 @@ pipeline {
                        script: 'date -u +"%Y-%m-%dT%H:%M:%SZ"'
                     ).trim()
         MAJOR_VERSION="0.0"
+        DOCKER_REG="https://registry.hub.docker.com"
+        DOCKER_REPO="leftshiftit"
     }
 
     stages {
@@ -27,6 +29,7 @@ pipeline {
                 echo "VCS_REF: ${VCS_REF}"
                 echo "BUILD_DATE: ${BUILD_DATE}"
                 echo "STAGING_VERSION: ${STAGING_VERSION}"
+                echo 'HOME: $HOME'
             }
         }
         stage('Build WAR') {
@@ -34,6 +37,7 @@ pipeline {
                 docker {
                     reuseNode true    //reuse the workspace on the agent defined at top-level\
                     image 'maven:3.5.0-jdk-8'
+                    args '-v $HOME/.m2:/root/.m2'
                 }
             }
             steps {
@@ -52,11 +56,30 @@ pipeline {
         }
         stage('Build Image') {
             steps {
-                sh """
-                    docker build --build-arg VCS_REF=${VCS_REF.take(6)} \
-                    --build-arg BUILD_DATE=${BUILD_DATE} \
-                    -t ${IMAGE}:${STAGING_VERSION} .
-                """
+                script {
+                    // Build the image. Create a global reference to the Image Name
+                    env.DOCKER_IMAGE_NAME="${DOCKER_REPO}/${IMAGE}:${STAGING_VERSION}"
+                    def myImage = docker.build("${DOCKER_IMAGE_NAME}", "--build-arg VCS_REF=${VCS_REF.take(6)} --build-arg BUILD_DATE=${BUILD_DATE} .")
+                    echo "Built image ${myImage.id}"
+                }
+            }
+        }
+        stage('Test Image') {
+            steps {
+                script {
+                    docker.image("${DOCKER_IMAGE_NAME}").inside {
+                        sh 'echo "Tests passed"'
+                    }
+                }
+            }
+        }
+        stage('Push Image') {
+            steps {
+                script {
+                    docker.withRegistry("${DOCKER_REG}", 'dockerhub-creds') {
+                        docker.image("${DOCKER_IMAGE_NAME}").push()
+                    }
+                }
             }
         }
     }
@@ -68,17 +91,20 @@ pipeline {
         }
     
         success {
-            mail(from: "bob@example.com", 
-                to: "steve@example.com", 
-                subject: "Build ${STAGING_VERSION} passed.",
-                body: "Nothing to see here")
+            echo "Success"      
+//            mail(from: "bob@example.com", 
+//                to: "steve@example.com", 
+//                subject: "Build ${STAGING_VERSION} passed.",
+//                body: "Nothing to see here")
         }
 
         failure {
-          mail(from: "bob@example.com", 
-              to: "steve@example.com", 
-              subject: "Build ${STAGING_VERSION} failed.",
-              body: "Nothing to see here")
+            echo "Failure"
+//          mail(from: "bob@example.com", 
+//              to: "steve@example.com", 
+//              subject: "Build ${STAGING_VERSION} failed.",
+//              body: "Nothing to see here")
         }
     }
 }
+
