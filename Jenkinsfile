@@ -1,4 +1,4 @@
-peline {
+Pipeline {
     agent any
     environment {
         IMAGE = readMavenPom().getArtifactId()
