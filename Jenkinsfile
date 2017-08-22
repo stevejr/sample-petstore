@@ -15,14 +15,14 @@ pipeline {
                 script {
                     env.VCS_REF = sh (
                         returnStdout: true,
-                        script: 'git rev-parse --short HEAD'
+                        script: 'git rev-parse HEAD'
                     ).trim()
                     env.STAGING_VERSION = "${MAJOR_VERSION}." +
                         sh (returnStdout: true,
                             script: 'git rev-list --count HEAD'
                         ).trim()
-                    currentBuild.displayName="${env.STAGING_VERSION}"
-                    currentBuild.description="${env.GIT_COMMIT}"        
+                    currentBuild.displayName="${STAGING_VERSION}"
+                    currentBuild.description="${VCS_REF}"        
                 }
                 echo "VCS_REF: ${VCS_REF}"
                 echo "BUILD_DATE: ${BUILD_DATE}"
@@ -53,8 +53,8 @@ pipeline {
         stage('Build Image') {
             steps {
                 sh """
-                    docker build --build-arg VCS_REF=${env.VCS_REF} \
-                    --build-arg BUILD_DATE=${env.BUILD_DATE} \
+                    docker build --build-arg VCS_REF=${VCS_REF.take(6)} \
+                    --build-arg BUILD_DATE=${BUILD_DATE} \
                     -t ${IMAGE}:${STAGING_VERSION} .
                 """
             }
