@@ -17,16 +17,21 @@ pipeline {
         stage('Setup Env vars') {
             steps {
                 script {
-                    env.VCS_REF = sh (
-                        returnStdout: true,
-                        script: 'git rev-parse HEAD'
-                    ).trim()
-                    env.STAGING_VERSION = "${MAJOR_VERSION}." +
-                        sh (returnStdout: true,
-                            script: 'git rev-list --count HEAD'
+                    try {
+                        env.VCS_REF = sh (
+                            returnStdout: true,
+                            script: 'git rev-parse HEAD'
                         ).trim()
-                    currentBuild.displayName="${env.STAGING_VERSION}"
-                    currentBuild.description="${env.VCS_REF}"        
+                        env.STAGING_VERSION = "${MAJOR_VERSION}." +
+                            sh (returnStdout: true,
+                                script: 'git rev-list --count HEAD'
+                            ).trim()
+                        currentBuild.displayName="${env.STAGING_VERSION}"
+                        currentBuild.description="${env.VCS_REF}"        
+                    } catch (Exception e) {
+                        echo "Exception caught: ${e}"
+                        currentBuild.result = 'FAILURE'
+                    }
                 }
                 sendNotifications 'STARTED'
                 echo "VCS_REF: ${env.VCS_REF}"
@@ -69,21 +74,27 @@ pipeline {
                         def myImage = docker.build("${env.DOCKER_IMAGE_NAME}", "--build-arg VCS_REF=${env.VCS_REF.take(6)} --build-arg BUILD_DATE=${env.BUILD_DATE} .")
                         echo "Built image ${myImage.id}"
                     } catch (Exception e) {
-                        echo "Exception Caught: ${e}"
+                        echo "Exception caught: ${e}"
+                        currentBuild.result = 'FAILURE'
                     }
                 }
-                post {
-                    success {
-                        sendNotifications "New Image built - ${env.DOCKER_IMAGE_NAME}"
-                    }
+            }
+            post {
+                success {
+                    sendNotifications "New Image built - ${env.DOCKER_IMAGE_NAME}"
                 }
             }
         }
         stage('Test Image') {
             steps {
                 script {
-                    docker.image("${env.DOCKER_IMAGE_NAME}").inside {
-                        sh 'echo "Tests passed"'
+                    try {
+                        docker.image("${env.DOCKER_IMAGE_NAME}").inside {
+                            sh 'echo "Tests passed"'
+                        }
+                    } catch (Exception e) {
+                        echo "Exception caught: ${e}"
+                        currentBuild.result = 'FAILURE'
                     }
                 }
             }
@@ -94,14 +105,19 @@ pipeline {
                     input message: 'Image look good?', ok: 'Push to Docker Hub', submitter: 'admin'
                 }
                 script {
-                    docker.withRegistry("${env.DOCKER_HUB_REGISTRY_URL}", 'dockerhub-creds') {
-                        docker.image("${env.DOCKER_IMAGE_NAME}").push()
+                    try {
+                        docker.withRegistry("${env.DOCKER_HUB_REGISTRY_URL}", 'dockerhub-creds') {
+                            docker.image("${env.DOCKER_IMAGE_NAME}").push()
+                        }
+                    } catch (Exception e) {
+                        echo "Exception caught: ${e}"
+                        currentBuild.result = 'FAILURE'
                     }
                 }
-                post {
-                    success {
-                        sendNotifications "New Image pushed - ${env.DOCKER_HUB_REGISTRY_URL}/${env.DOCKER_IMAGE_NAME}"
-                    }
+            }
+            post {
+                success {
+                    sendNotifications "New Image pushed - ${env.DOCKER_HUB_REGISTRY_URL}/${env.DOCKER_IMAGE_NAME}"
                 }
             }
         }
