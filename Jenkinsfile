@@ -25,13 +25,13 @@ pipeline {
                         sh (returnStdout: true,
                             script: 'git rev-list --count HEAD'
                         ).trim()
-                    currentBuild.displayName="${STAGING_VERSION}"
-                    currentBuild.description="${VCS_REF}"        
+                    currentBuild.displayName="${env.STAGING_VERSION}"
+                    currentBuild.description="${env.VCS_REF}"        
                 }
-                echo "VCS_REF: ${VCS_REF}"
-                echo "BUILD_DATE: ${BUILD_DATE}"
-                echo "STAGING_VERSION: ${STAGING_VERSION}"
-                echo 'HOME: $HOME'
+                sendNotifications 'STARTED'
+                echo "VCS_REF: ${env.VCS_REF}"
+                echo "BUILD_DATE: ${env.BUILD_DATE}"
+                echo "STAGING_VERSION: ${env.STAGING_VERSION}"
             }
         }
         stage('Build WAR') {
@@ -44,7 +44,7 @@ pipeline {
             }
             steps {
                 //sh "mvn versions:update-parent -DallowSnapshots=true -DparentVersion=[17.5.0-SNAPSHOT,17.6.0-SNAPSHOT] -B -U"
-                sh "mvn versions:set versions:update-child-modules -DnewVersion=${STAGING_VERSION}-SNAPSHOT -B -U"
+                sh "mvn versions:set versions:update-child-modules -DnewVersion=${env.STAGING_VERSION}-SNAPSHOT -B -U"
                 sh 'mvn versions:use-latest-versions -DallowSnapshots=true -Dincludes=com.fanniemae.amtm -B -U'
 
                 sh 'mvn -B -f pom.xml clean package'
@@ -65,11 +65,16 @@ pipeline {
                 script {
                     try {
                         // Build the image. Create a global reference to the Image Name
-                        env.DOCKER_IMAGE_NAME="${DOCKER_REPO}/${IMAGE}:${STAGING_VERSION}"
-                        def myImage = docker.build("${DOCKER_IMAGE_NAME}", "--build-arg VCS_REF=${VCS_REF.take(6)} --build-arg BUILD_DATE=${BUILD_DATE} .")
+                        env.DOCKER_IMAGE_NAME="${env.DOCKER_REPO}/${env.IMAGE}:${env.STAGING_VERSION}"
+                        def myImage = docker.build("${env.DOCKER_IMAGE_NAME}", "--build-arg VCS_REF=${env.VCS_REF.take(6)} --build-arg BUILD_DATE=${env.BUILD_DATE} .")
                         echo "Built image ${myImage.id}"
                     } catch (Exception e) {
                         echo "Exception Caught: ${e}"
+                    }
+                }
+                post {
+                    success {
+                        sendNotifications "New Image built - ${env.DOCKER_IMAGE_NAME}"
                     }
                 }
             }
@@ -77,7 +82,7 @@ pipeline {
         stage('Test Image') {
             steps {
                 script {
-                    docker.image("${DOCKER_IMAGE_NAME}").inside {
+                    docker.image("${env.DOCKER_IMAGE_NAME}").inside {
                         sh 'echo "Tests passed"'
                     }
                 }
@@ -89,8 +94,13 @@ pipeline {
                     input message: 'Image look good?', ok: 'Push to Docker Hub', submitter: 'admin'
                 }
                 script {
-                    docker.withRegistry("${DOCKER_HUB_REGISTRY_URL}", 'dockerhub-creds') {
-                        docker.image("${DOCKER_IMAGE_NAME}").push()
+                    docker.withRegistry("${env.DOCKER_HUB_REGISTRY_URL}", 'dockerhub-creds') {
+                        docker.image("${env.DOCKER_IMAGE_NAME}").push()
+                    }
+                }
+                post {
+                    success {
+                        sendNotifications "New Image pushed - ${env.DOCKER_HUB_REGISTRY_URL}/${env.DOCKER_IMAGE_NAME}"
                     }
                 }
             }
