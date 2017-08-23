@@ -7,7 +7,6 @@ pipeline {
                        script: 'date -u +"%Y-%m-%dT%H:%M:%SZ"'
                     ).trim()
         MAJOR_VERSION="0.0"
-        DOCKER_REG="https://registry.hub.docker.com"
         DOCKER_REPO="leftshiftit"
     }
 
@@ -83,7 +82,7 @@ pipeline {
                     input message: 'Image look good?', ok: 'Push to Docker Hub', submitter: 'admin'
                 }
                 script {
-                    docker.withRegistry("${DOCKER_REG}", 'dockerhub-creds') {
+                    docker.withRegistry("${DOCKER_HUB_REGISTRY_URL}", 'dockerhub-creds') {
                         docker.image("${DOCKER_IMAGE_NAME}").push()
                     }
                 }
