@@ -1,3 +1,6 @@
+#!groovy
+@Library('sample-petstore-declarative-libs') _
+
 pipeline {
     agent any
     environment {
@@ -45,7 +48,11 @@ pipeline {
                 sh 'mvn versions:use-latest-versions -DallowSnapshots=true -Dincludes=com.fanniemae.amtm -B -U'
 
                 sh 'mvn -B -f pom.xml clean package'
-                junit(allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml')
+            }
+            post {
+                success {
+                    junit(allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml')
+                }
             }
         }
         stage('Quality Analysis') {
@@ -92,6 +99,7 @@ pipeline {
     post {
 // Always runs. And it runs before any of the other post conditions.
         always {
+            sendNotifications currentBuild.result
             // Let's wipe out the workspace before we finish!
             deleteDir()
         }
