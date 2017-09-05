@@ -1,6 +1,3 @@
-#!groovy
-@Library('sample-petstore-declarative-libs') _
-
 pipeline {
     agent any
     environment {
